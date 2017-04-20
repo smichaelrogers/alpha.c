@@ -4,79 +4,40 @@
 
 #include "alpha.h"
 
+int search(int alpha, int beta, int depth) {
+  int i, n;
 
-int main()
-{
-  int i;
-	move_t m;
-
-  for(i = 0; i < 100; i++) {
-    m_from = -1;
-    m_to = -1;
-    ply = 0;
-  	nodes = 0;
-
-  	search(-5000, 5000, 8);
-
-    if (m_from < 0)
-      break;
-
-    m.from = m_from;
-    m.to = m_to;
-    m.piece = pieces[m_from];
-    m.target = pieces[m_to];
-		make_move(&m);
-		print_board();
-  }
-
-  return 0;
-}
-
-
-/**
- * minimax search with alpha beta pruning
- */
-int search(int alpha, int beta, int depth)
-{
-	int i, n;
-
-	if (depth == 0)
+  if (depth == 0)
     return evaluate();
 
   nodes++;
   generate_moves();
 
-	for (i = on_move[ply]; i < on_move[ply + 1]; i++) {
-		if (!make_move(&moves[i]))
-			continue;
-
-		n = -search(-beta, -alpha, depth - 1);
-		unmake_move(&moves[i]);
+  for (i = on_move[ply]; i < on_move[ply + 1]; i++) {
+    if (!make_move(&moves[i]))
+      continue;
+    n = -search(-beta, -alpha, depth - 1);
+    unmake_move(&moves[i]);
 
     if (n >= beta)
-			return beta;
-
-		if (n > alpha) {
-			alpha = n;
-			if (ply == 0) {
-				m_from = moves[i].from;
+      return beta;
+    if (n > alpha) {
+      alpha = n;
+      if (ply == 0) {
+        m_from = moves[i].from;
         m_to = moves[i].to;
-			}
-		}
-	}
+      }
+    }
+  }
 
-	return alpha;
+  return alpha;
 }
 
 
-/**
- * populates move list with avaialble moves from the current position
- */
-void generate_moves()
-{
+void generate_moves() {
   int i, f, s, t;
 
-	on_move[ply + 1] = on_move[ply];
+  on_move[ply + 1] = on_move[ply];
 
   for (f = 0; f < 64; f++) {
     if (colors[f] != mx)
@@ -93,114 +54,100 @@ void generate_moves()
         continue;
       add_move(f, t);
       if (colors[t + up[mx]] == EMPTY && ROW(f) == pawn_rank[mx])
-				add_move(f, t + up[mx]);
+        add_move(f, t + up[mx]);
 
     } else {
 
-			for (i = 0; i < nsteps[pieces[f]]; i++) {
-				s = steps[pieces[f]][i];
-				t = SQ120[SQ64[f] + s];
+      for (i = 0; i < nsteps[pieces[f]]; i++) {
+        s = steps[pieces[f]][i];
+        t = SQ120[SQ64[f] + s];
+
         while(t != -1) {
-					if (colors[t] == mn || colors[t] == EMPTY)
-						add_move(f, t);
-					if (colors[t] != EMPTY || pieces[f] == KNIGHT || pieces[f] == KING)
-						break;
-					t = SQ120[SQ64[t] + s];
-				}
-			}
+          if (colors[t] == mn || colors[t] == EMPTY)
+            add_move(f, t);
+          if (colors[t] != EMPTY || pieces[f] == KNIGHT || pieces[f] == KING)
+            break;
+          t = SQ120[SQ64[t] + s];
+        }
+      }
     }
   }
 }
 
 
-/**
- * adds a move to the move list
- */
 void add_move(int from, int to) {
-	move_t *m;
+  move_t *m;
 
-	m = &moves[on_move[ply + 1]++];
-	m->from = (char)from;
-	m->to = (char)to;
-	m->piece = (char)pieces[from];
-	m->target = (char)pieces[to];
+  m = &moves[on_move[ply + 1]++];
+  m->from = (char)from;
+  m->to = (char)to;
+  m->piece = (char)pieces[from];
+  m->target = (char)pieces[to];
 }
 
 
-/**
- * changes the current side to move
- */
-void swap_sides()
-{
-  mx ^= 1; mn ^= 1;
+void swap_sides() {
+  mx ^= 1;
+  mn ^= 1;
 }
 
-/**
- * makes a move
- */
+
 bool make_move(move_t *m) {
-	ply++;
+  ply++;
 
-	colors[m->to] = mx;
-	pieces[m->to] = m->piece;
-	colors[m->from] = EMPTY;
-	pieces[m->from] = EMPTY;
+  colors[m->to] = mx;
+  pieces[m->to] = m->piece;
+  colors[m->from] = EMPTY;
+  pieces[m->from] = EMPTY;
 
-	if (m->piece == KING)
+  if (m->piece == KING)
     kings[mx] = m->to;
-	else if (m->piece == PAWN && ROW(m->to) == promote_rank[mx])
+  else if (m->piece == PAWN && ROW(m->to) == promote_rank[mx])
     pieces[m->to] = QUEEN;
 
   if(in_check()) {
-		// swap_sides();
-    mx ^= 1; mn ^= 1;
-		unmake_move(m);
-		return false;
-	}
-	// swap_sides();
-  mx ^= 1; mn ^= 1;
-	return true;
+    swap_sides();
+    unmake_move(m);
+    return false;
+  }
+  swap_sides();
+  return true;
 }
 
-/**
- * unmakes a move
- */
+
 void unmake_move(move_t *m) {
-	ply--;
-	// swap_sides();
-  mx ^= 1; mn ^= 1;
+  ply--;
+  swap_sides();
 
-	colors[m->from] = mx;
-	pieces[m->from] = m->piece;
-	colors[m->to] = m->target == EMPTY ? EMPTY : mn;
-	pieces[m->to] = m->target;
+  colors[m->from] = mx;
+  pieces[m->from] = m->piece;
+  colors[m->to] = m->target == EMPTY ? EMPTY : mn;
+  pieces[m->to] = m->target;
 
-	if (m->piece == KING)
-		kings[mx] = m->from;
+  if (m->piece == KING)
+    kings[mx] = m->from;
 }
 
-/**
- * evaluates the current position relative to the side to move
- */
+
 int evaluate() {
-	int i, x;
-	x = 0;
-	for (i = 0; i < 64; i++) {
-		if      (colors[i] == mx) x += (material[i] + pst[i]);
-		else if (colors[i] == mn) x -= (material[i] + pst[i]);
-	}
-	return x;
+  int i, x;
+
+  x = 0;
+  for (i = 0; i < 64; i++) {
+    if      (colors[i] == mx) x += (material[i] + pst[i]);
+    else if (colors[i] == mn) x -= (material[i] + pst[i]);
+  }
+
+  return x;
 }
 
-/**
- * determines whether the side to move is in check
- */
-bool in_check() {
-	int i, t, s, f;
-	f = kings[mx];
 
-	for(i = 0; i < 8; i++) {
-		t = SQ120[SQ64[f] + steps[KNIGHT][i]];
+bool in_check() {
+  int i, t, s, f;
+  f = kings[mx];
+
+  for(i = 0; i < 8; i++) {
+    t = SQ120[SQ64[f] + steps[KNIGHT][i]];
 
     if (t != -1 && pieces[t] == KNIGHT && colors[t] == mn)
       return true;
@@ -212,7 +159,7 @@ bool in_check() {
       t = SQ120[SQ64[t] + s];
 
     if (t == -1 || colors[t] != mn)
-			continue;
+      continue;
 
     switch (pieces[t]) {
       case BISHOP:
@@ -225,28 +172,52 @@ bool in_check() {
         if (SQ120[SQ64[f] + s] != t) break;
       case QUEEN:
         return true;
-		}
-	}
+    }
+  }
 
-	return false;
+  return false;
 }
 
-/**
- * prints an ascii representation of the board
- */
-void print_board()
-{
-	int i;
+
+void print_board() {
+  int i;
 
   printf("\n nodes: %i", nodes);
   printf("\n move: %i to %i", m_from, m_to);
-	printf("\n\n ");
+  printf("\n\n ");
 
-	for (i = 0; i < 64; i++) {
+  for (i = 0; i < 64; i++) {
     printf(" %c", piece_types[colors[i] % 6][pieces[i]]);
-		if ((i + 1) % 8 == 0 && i != 63)
-			printf("\n ");
-	}
+    if ((i + 1) % 8 == 0 && i != 63)
+      printf("\n ");
+  }
 
-	printf("\n");
+  printf("\n");
+}
+
+
+int main() {
+  int i;
+  move_t m;
+
+  for(i = 0; i < 100; i++) {
+    m_from = -1;
+    m_to = -1;
+    ply = 0;
+    nodes = 0;
+
+    search(-5000, 5000, 7);
+
+    if (m_from < 0)
+      break;
+
+    m.from = m_from;
+    m.to = m_to;
+    m.piece = pieces[m_from];
+    m.target = pieces[m_to];
+    make_move(&m);
+    print_board();
+  }
+
+  return 0;
 }

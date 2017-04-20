@@ -2,7 +2,7 @@
 
 (wip) tiny chess engine written in c
 
-more complete versions:
+other versions:
 - [alpha.rb](https://github.com/smichaelrogers/alpha.rb)
 - [alpha.js](https://github.com/smichaelrogers/alpha.js)
 
