@@ -18,10 +18,10 @@ typedef struct move {
   char target;
 } move_t;
 
-typedef enum {
-  false = 0,
-  true  = 1
-} bool;
+// typedef enum {
+//   false = 0,
+//   true  = 1
+// } bool;
 
 int     search(int alpha, int beta, int depth);
 void    generate_moves();
