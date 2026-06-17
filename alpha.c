@@ -2,10 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
+#include <unistd.h>
+#include <math.h>
 
 #include "alpha.h"
 
-int search(int alpha, int beta, int depth) {
+int search(int alpha, int beta, int depth)
+{
   int i, n;
 
   if (depth == 0)
@@ -14,7 +18,8 @@ int search(int alpha, int beta, int depth) {
   nodes++;
   generate_moves();
 
-  for (i = on_move[ply]; i < on_move[ply + 1]; i++) {
+  for (i = on_move[ply]; i < on_move[ply + 1]; i++)
+  {
     if (!make_move(&moves[i]))
       continue;
     n = -search(-beta, -alpha, depth - 1);
@@ -22,9 +27,11 @@ int search(int alpha, int beta, int depth) {
 
     if (n >= beta)
       return beta;
-    if (n > alpha) {
+    if (n > alpha)
+    {
       alpha = n;
-      if (ply == 0) {
+      if (ply == 0)
+      {
         m_from = moves[i].from;
         m_to = moves[i].to;
       }
@@ -34,17 +41,19 @@ int search(int alpha, int beta, int depth) {
   return alpha;
 }
 
-
-void generate_moves() {
+void generate_moves()
+{
   int i, f, s, t;
 
   on_move[ply + 1] = on_move[ply];
 
-  for (f = 0; f < 64; f++) {
+  for (f = 0; f < 64; f++)
+  {
     if (colors[f] != mx)
       continue;
 
-    if (pieces[f] == PAWN) {
+    if (pieces[f] == PAWN)
+    {
 
       t = f + up[mx];
       if (colors[t + 1] == mn && SQ120[SQ64[t] + 1] != -1)
@@ -56,14 +65,17 @@ void generate_moves() {
       add_move(f, t);
       if (colors[t + up[mx]] == EMPTY && ROW(f) == pawn_rank[mx])
         add_move(f, t + up[mx]);
+    }
+    else
+    {
 
-    } else {
-
-      for (i = 0; i < nsteps[pieces[f]]; i++) {
+      for (i = 0; i < nsteps[pieces[f]]; i++)
+      {
         s = steps[pieces[f]][i];
         t = SQ120[SQ64[f] + s];
 
-        while(t != -1) {
+        while (t != -1)
+        {
           if (colors[t] == mn || colors[t] == EMPTY)
             add_move(f, t);
           if (colors[t] != EMPTY || pieces[f] == KNIGHT || pieces[f] == KING)
@@ -75,8 +87,8 @@ void generate_moves() {
   }
 }
 
-
-void add_move(int from, int to) {
+void add_move(int from, int to)
+{
   move_t *m;
 
   m = &moves[on_move[ply + 1]++];
@@ -86,14 +98,14 @@ void add_move(int from, int to) {
   m->target = (char)pieces[to];
 }
 
-
-void swap_sides() {
+void swap_sides()
+{
   mx ^= 1;
   mn ^= 1;
 }
 
-
-bool make_move(move_t *m) {
+bool make_move(move_t *m)
+{
   ply++;
 
   colors[m->to] = mx;
@@ -106,7 +118,8 @@ bool make_move(move_t *m) {
   else if (m->piece == PAWN && ROW(m->to) == promote_rank[mx])
     pieces[m->to] = QUEEN;
 
-  if(in_check()) {
+  if (in_check())
+  {
     swap_sides();
     unmake_move(m);
     return false;
@@ -115,8 +128,8 @@ bool make_move(move_t *m) {
   return true;
 }
 
-
-void unmake_move(move_t *m) {
+void unmake_move(move_t *m)
+{
   ply--;
   swap_sides();
 
@@ -129,25 +142,29 @@ void unmake_move(move_t *m) {
     kings[mx] = m->from;
 }
 
-
-int evaluate() {
+int evaluate()
+{
   int i, x;
 
   x = 0;
-  for (i = 0; i < 64; i++) {
-    if      (colors[i] == mx) x += (material[i] + pst[i]);
-    else if (colors[i] == mn) x -= (material[i] + pst[i]);
+  for (i = 0; i < 64; i++)
+  {
+    if (colors[i] == mx)
+      x += (material[i] + pst[i]);
+    else if (colors[i] == mn)
+      x -= (material[i] + pst[i]);
   }
 
   return x;
 }
 
-
-bool in_check() {
+bool in_check()
+{
   int i, t, s, f;
   f = kings[mx];
 
-  for(i = 0; i < 8; i++) {
+  for (i = 0; i < 8; i++)
+  {
     t = SQ120[SQ64[f] + steps[KNIGHT][i]];
 
     if (t != -1 && pieces[t] == KNIGHT && colors[t] == mn)
@@ -162,33 +179,34 @@ bool in_check() {
     if (t == -1 || colors[t] != mn)
       continue;
 
-    switch (pieces[t]) {
-      case BISHOP:
-        if (i > 3) break;
-      case ROOK:
-        if (i < 4) break;
-      case PAWN:
-        if (s - up[mn] != 1 && s - up[mn] != -1) break;
-      case KING:
-        if (SQ120[SQ64[f] + s] != t) break;
-      case QUEEN:
-        return true;
+    switch (pieces[t])
+    {
+    case BISHOP:
+      if (i > 3)
+        break;
+    case ROOK:
+      if (i < 4)
+        break;
+    case PAWN:
+      if (s - up[mn] != 1 && s - up[mn] != -1)
+        break;
+    case KING:
+      if (SQ120[SQ64[f] + s] != t)
+        break;
+    case QUEEN:
+      return true;
     }
   }
 
   return false;
 }
 
-
-void print_board() {
+void print_board()
+{
   int i;
-
-  printf("\n nodes: %i", nodes);
-  printf("\n move: %i to %i", m_from, m_to);
-  printf("\n\n ");
-
-  for (i = 0; i < 64; i++) {
-    printf(" %c", piece_types[colors[i] % 6][pieces[i]]);
+  for (i = 0; i < 64; i++)
+  {
+    printf("%c ", piece_types[colors[i] % 6][pieces[i]]);
     if ((i + 1) % 8 == 0 && i != 63)
       printf("\n ");
   }
@@ -196,18 +214,39 @@ void print_board() {
   printf("\n");
 }
 
+void sub_timespec(struct timespec t1, struct timespec t2, struct timespec *td)
+{
+  td->tv_nsec = t2.tv_nsec - t1.tv_nsec;
+  td->tv_sec = t2.tv_sec - t1.tv_sec;
+  if (td->tv_sec > 0 && td->tv_nsec < 0)
+  {
+    td->tv_nsec += NS_PER_SECOND;
+    td->tv_sec--;
+  }
+  else if (td->tv_sec < 0 && td->tv_nsec > 0)
+  {
+    td->tv_nsec -= NS_PER_SECOND;
+    td->tv_sec++;
+  }
+}
 
-int main() {
+int main()
+{
+  int depth = 7;
   int i;
   move_t m;
+  struct timespec start, end, delta;
 
-  for(i = 0; i < 100; i++) {
+  for (i = 0; i < 100; i++)
+  {
     m_from = -1;
     m_to = -1;
     ply = 0;
     nodes = 0;
-
-    search(-5000, 5000, 7);
+    clock_gettime(CLOCK_REALTIME, &start);
+    search(-5000, 5000, depth);
+    clock_gettime(CLOCK_REALTIME, &end);
+    sub_timespec(start, end, &delta);
 
     if (m_from < 0)
       break;
@@ -217,6 +256,16 @@ int main() {
     m.piece = pieces[m_from];
     m.target = pieces[m_to];
     make_move(&m);
+    double time_taken = (end.tv_sec - start.tv_sec) +
+                        (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("\n ---------------------------------");
+    printf("\n move number: %i", i + 1);
+    printf("\n depth: %i", depth);                    
+    printf("\n nodes: %i", nodes);
+    printf("\n move: %i to %i", m_from, m_to);
+    printf("\n clock: %f seconds", time_taken);
+    printf("\n nps: %i", (int)round((double)(nodes / time_taken)));
+    printf("\n\n ");
     print_board();
   }
 

@@ -1,2 +1,2 @@
 alpha: alpha.c
-	gcc -o alpha alpha.c -I.
+	gcc -o alpha alpha.c -I. -lm

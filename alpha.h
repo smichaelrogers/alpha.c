@@ -26,6 +26,7 @@ typedef struct move {
 //   False = 0,
 //   True = 1
 // } bool;
+enum { NS_PER_SECOND = 1000000000 };
 
 int     search(int alpha, int beta, int depth);
 void    generate_moves();
@@ -36,6 +37,7 @@ void    unmake_move(move_t *m);
 int     evaluate();
 bool    in_check();
 void    print_board();
+void    sub_timespec(struct timespec t1, struct timespec t2, struct timespec *td);
 int     main();
 
 move_t  moves[64000];
@@ -44,6 +46,7 @@ int     m_from;
 int     m_to;
 int     ply;
 int     nodes;
+int     nps;
 int     piece_rank[2]    =  { 7, 0};
 int     pawn_rank[2]     =  { 6, 1};
 int     promote_rank[2]  =  { 0, 7};
